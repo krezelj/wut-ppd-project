@@ -6,33 +6,16 @@ import string
 import re
 import emoji
 import nltk
+import re
+import emoji
+import nltk
 
-# nltk.download("punkt")
-# nltk.download("wordnet")
-# from nltk.tokenize import word_tokenize
-# from nltk.stem import WordNetLemmatizer
-
-
-class TextTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        pass
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        # Flatten X to get a 1D array if it's not already
-        texts = X.flatten()
-        processed_texts = []
-        for text in texts:
-            if not isinstance(text, str):
-                text = ""  # Handle NaN or non-string values
-            text = re.sub(r"@\w+", "", text)
-            text = text.lower()
-            processed_texts.append(text)
-
-        # Return a list of strings
-        return processed_texts
+nltk.download("omw-1.4")
+nltk.download("punkt_tab")
+nltk.download("punkt")
+nltk.download("wordnet")
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 
 class DropColumnTransformer(BaseEstimator, TransformerMixin):
@@ -90,7 +73,7 @@ class TimeTransformer(BaseEstimator, TransformerMixin):
 
 class TextTransformer(BaseEstimator, TransformerMixin):
     def __init__(self):
-        pass
+        self.lemmatizer = WordNetLemmatizer()
 
     def fit(self, X, y=None):
         return self
@@ -101,19 +84,16 @@ class TextTransformer(BaseEstimator, TransformerMixin):
         for text in texts:
             if not isinstance(text, str):
                 text = ""
+            # we want to delte all urls, mentions and emojis
+            # text = re.sub(r"http\S+|www\S+|https\S+", "", text, flags=re.MULTILINE) # does not work (???)
             text = re.sub(r"@\w+", "", text)
-            text = text.lower()
+            # or text = re.sub(r"@\w+", "@airline", text) to include that this is an airline
             text = emoji.demojize(text)
-            # Add space around demojized text
-            text = re.sub(r"(:\w+:)", r" \1 ", text)
-            processed_texts.append(text)
-        # Lemmatization
-        #             from nltk.stem import WordNetLemmatizer
-        #             nltk.download('wordnet')
-        #             lemmatizer = WordNetLemmatizer()
-        #             tokens = [lemmatizer.lemmatize(token) for token in tokens]
-        #             Return a list of strings
-
-        # Also we need to delte https:// and http:// links maybe
+            text = text.lower()
+            tokens = word_tokenize(text)
+            tokens = [self.lemmatizer.lemmatize(token) for token in tokens]
+            processed_text = " ".join(tokens)
+            processed_texts.append(processed_text)
+        self.processed_texts_ = processed_texts
 
         return processed_texts
