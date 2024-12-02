@@ -1,21 +1,17 @@
+import re
+
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import numpy as np
-import string
-import re
-import emoji
 import nltk
-import re
-import emoji
-import nltk
-
-nltk.download("omw-1.4")
-nltk.download("punkt_tab")
-nltk.download("punkt")
-nltk.download("wordnet")
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
+
+
+nltk.download("stopwords")
+nltk.download("punkt")
+nltk.download("punkt_tab")
 
 
 class DropColumnTransformer(BaseEstimator, TransformerMixin):
@@ -46,8 +42,6 @@ class TimeTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        # X_copy = X.copy()
-
         def get_sin_cos(values, period):
             scaled = 2 * np.pi * values / period
             return np.sin(scaled), np.cos(scaled)
@@ -73,27 +67,39 @@ class TimeTransformer(BaseEstimator, TransformerMixin):
 
 class TextTransformer(BaseEstimator, TransformerMixin):
     def __init__(self):
-        self.lemmatizer = WordNetLemmatizer()
+        self.vectorizer = TfidfVectorizer(max_features=200)
+
+    def get_feature_names_out(self, feature_names_out):
+        return [
+            f"vectorizer__{name}" for name in self.vectorizer.get_feature_names_out()
+        ]
 
     def fit(self, X, y=None):
+        X = np.array(list(map(self._extract_tweet, X)))
+        corpus = np.array(list(map(self._preprocess_tweet, X)))
+        self.vectorizer.fit(corpus)
         return self
 
     def transform(self, X):
-        texts = X.flatten()
-        processed_texts = []
-        for text in texts:
-            if not isinstance(text, str):
-                text = ""
-            # we want to delte all urls, mentions and emojis
-            # text = re.sub(r"http\S+|www\S+|https\S+", "", text, flags=re.MULTILINE) # does not work (???)
-            text = re.sub(r"@\w+", "", text)
-            # or text = re.sub(r"@\w+", "@airline", text) to include that this is an airline
-            text = emoji.demojize(text)
-            text = text.lower()
-            tokens = word_tokenize(text)
-            tokens = [self.lemmatizer.lemmatize(token) for token in tokens]
-            processed_text = " ".join(tokens)
-            processed_texts.append(processed_text)
-        self.processed_texts_ = processed_texts
+        corpus = np.array(list(map(self._extract_tweet, X)))
+        return self.vectorizer.transform(corpus)
 
-        return processed_texts
+    def _extract_tweet(self, tweet):
+        return tweet[0]
+
+    def _preprocess_tweet(self, tweet):
+        tweet = tweet.lower()
+
+        # Remove URLs
+        tweet = re.sub(r"http\S+|www\S+|https\S+", "", tweet, flags=re.MULTILINE)
+        # Remove mentions and hashtags
+        tweet = re.sub(r"@\w+|#\w+", "", tweet)
+        # Remove punctuation
+        tweet = re.sub(r"[^\w\s]", "", tweet)
+        # Remove numbers
+        tweet = re.sub(r"[0-9]+", "", tweet)
+
+        tokens = word_tokenize(tweet)
+        stop_words = set(stopwords.words("english"))
+        tokens = [word for word in tokens if word not in stop_words]
+        return " ".join(tokens)
