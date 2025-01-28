@@ -6,10 +6,11 @@ from sklearn.preprocessing import OneHotEncoder
 from .transformers import *
 
 # Define columns for different preprocessing steps
-columns_to_drop = ['retweet_count', 'airline_sentiment_gold', 'negativereason_gold', 'tweet_coord', 'name', 'user_timezone']
-columns_to_fill_zero = ['negativereason_confidence']
-columns_to_fill_unknown = ['negativereason', 'tweet_location']
-columns_to_ohe = ['negativereason', 'airline', 'tweet_location']
+columns_to_drop = ['retweet_count', 'airline_sentiment_gold', 'negativereason_gold', 
+                   'tweet_coord', 'name', 'user_timezone', 'negativereason', 'negativereason_confidence']
+columns_to_fill_zero = []
+columns_to_fill_unknown = ['tweet_location']
+columns_to_ohe = ['airline', 'tweet_location']
 
 # Define the order of columns after transformation
 column_order_after_transform = \
