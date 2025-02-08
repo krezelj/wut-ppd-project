@@ -5,23 +5,18 @@ from sklearn.preprocessing import OneHotEncoder
 
 from .transformers import *
 
-# Define columns for different preprocessing steps
 columns_to_drop = ['retweet_count', 'airline_sentiment_gold', 'negativereason_gold', 
                    'tweet_coord', 'name', 'user_timezone', 'negativereason', 'negativereason_confidence']
 columns_to_fill_zero = []
 columns_to_fill_unknown = ['tweet_location']
 columns_to_ohe = ['airline', 'tweet_location']
 
-# Define the order of columns after transformation
 column_order_after_transform = \
     columns_to_fill_zero + columns_to_fill_unknown + ['airline', 'text', 'tweet_created']
 column_idx = lambda c: column_order_after_transform.index(c)
 
-# Create a preprocessing pipeline
 preprocessor = Pipeline(steps=[
-    # Step 1: Drop unnecessary columns
     ('drop', DropColumnTransformer(columns_to_drop)),
-    # Step 2: Fill missing values
     ('fill_missing',
         ColumnTransformer(
             transformers=[
@@ -29,7 +24,6 @@ preprocessor = Pipeline(steps=[
                 ('fill_other', SimpleImputer(strategy='constant', fill_value='Unknown'), columns_to_fill_unknown),
             ],
             remainder='passthrough')),
-    # Step 3: Encode categorical variables and transform other features
     ('encode', ColumnTransformer(transformers=[
         ('ohe', OneHotEncoder(
             handle_unknown='infrequent_if_exist',
